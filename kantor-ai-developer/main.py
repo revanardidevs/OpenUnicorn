@@ -192,11 +192,12 @@ async def process_request(path, request_headers):
 
 # Memulai Server WebSocket
 async def start_server():
-    print("🌐 Menjalankan WebSocket Server di ws://127.0.0.1:8000...")
+    port = int(os.environ.get("PORT", 8000))
+    print(f"🌐 Menjalankan WebSocket Server di ws://0.0.0.0:{port}...")
     # Jalankan broadcaster di background
     asyncio.create_task(broadcast_events())
     
-    async with websockets.serve(websocket_handler, "0.0.0.0", 8000, process_request=process_request):
+    async with websockets.serve(websocket_handler, "0.0.0.0", port, process_request=process_request):
         await asyncio.Future()  # Berjalan selamanya (infinite loop)
 
 # Fungsi untuk mengirim notifikasi ke Discord
