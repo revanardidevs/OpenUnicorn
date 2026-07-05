@@ -4,10 +4,9 @@ export const resolveStudioProxyGatewayUrl = (upstreamGatewayUrl?: string): strin
   const raw = typeof upstreamGatewayUrl === "string" ? upstreamGatewayUrl.trim() : "";
   if (raw) {
     try {
+      // Selalu gunakan koneksi langsung (bypass Vercel proxy)
       const parsed = new URL(raw);
-      if (LOOPBACK_HOSTS.has(parsed.hostname)) {
-        return raw;
-      }
+      return raw;
     } catch {
       // Fall through to the Studio proxy for malformed or non-URL values.
     }
