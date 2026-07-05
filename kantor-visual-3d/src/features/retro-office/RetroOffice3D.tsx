@@ -1076,7 +1076,7 @@ function useAgentTick(
           (item) => item.type === "phone_booth",
         ) ?? null;
 
-      if (agent.status === "working" && !explicitDeskHold && deskPos)
+      if ((agent.status === "working" || agent.status === "running") && !explicitDeskHold && deskPos)
         stickyUntilRef.current.set(agent.id, now + DESK_STICKY_MS);
       const stickyUntil = stickyUntilRef.current.get(agent.id) ?? 0;
       const effectiveStatus: OfficeAgent["status"] =
@@ -1089,7 +1089,7 @@ function useAgentTick(
               explicitPhoneBoothHold ||
               explicitQaHold ||
               explicitGithubHold ||
-              agent.status === "working" ||
+              (agent.status === "working" || agent.status === "running") ||
               stickyUntil > now
             ? "working"
             : "idle";
@@ -1842,7 +1842,7 @@ function useAgentTick(
       }
       const baseSpeed = agent.walkSpeed ?? WALK_SPEED;
       const speed =
-        agent.status === "working" && agent.state !== "sitting"
+        (agent.status === "working" || agent.status === "running") && agent.state !== "sitting"
           ? baseSpeed * WORKING_WALK_SPEED_MULTIPLIER
           : baseSpeed;
       // Move toward the first waypoint. An empty path means astar found no route —
@@ -1899,7 +1899,7 @@ function useAgentTick(
             ny = agent.pingPongTargetY ?? ny;
             nf = agent.pingPongFacing ?? nf;
             ns = "standing";
-          } else if (agent.status === "working") {
+          } else if ((agent.status === "working" || agent.status === "running")) {
             if (
               agent.interactionTarget === "sms_booth" &&
               agent.smsBoothStage !== "typing"
@@ -2894,7 +2894,7 @@ export function RetroOffice3D({
               renderAgent?.state === "sitting" ||
               renderAgent?.state === "dancing" ||
               renderAgent?.status === "working" ||
-              agent.status === "working",
+              (agent.status === "working" || agent.status === "running"),
           };
           return acc;
         },
@@ -5923,7 +5923,7 @@ export function RetroOffice3D({
               {compactRosterAgents.map((agent) => {
                 const status = agentStatusLookup[agent.id];
                 const isError = status?.isError ?? agent.status === "error";
-                const working = status?.working ?? agent.status === "working";
+                const working = status?.working ?? (agent.status === "working" || agent.status === "running");
                 const isRemoteAgent = isRemoteOfficeAgentId(agent.id);
                 const mood = moodByAgentId[agent.id];
                 const dotClass = isError
@@ -6017,7 +6017,7 @@ export function RetroOffice3D({
                 {agents.map((agent) => {
                   const status = agentStatusLookup[agent.id];
                   const isError = status?.isError ?? agent.status === "error";
-                  const working = status?.working ?? agent.status === "working";
+                  const working = status?.working ?? (agent.status === "working" || agent.status === "running");
                   const isRemoteAgent = isRemoteOfficeAgentId(agent.id);
                   const dotClass = isError
                     ? "bg-red-400"
