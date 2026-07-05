@@ -5,7 +5,7 @@ export type OfficeAgent = {
   id: string;
   name: string;
   subtitle?: string | null;
-  status: "working" | "idle" | "error";
+  status: "working" | "idle" | "error" | "running";
   color: string;
   item: string;
   avatarProfile?: AgentAvatarProfile | null;
