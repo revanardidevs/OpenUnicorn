@@ -4,7 +4,7 @@ from crewai import Agent, LLM
 # Konfigurasi LLM menggunakan Gemini (Gratis/Lebih hemat)
 # CrewAI otomatis menggunakan LiteLLM, sehingga format 'gemini/...' bisa digunakan
 gemini_llm = LLM(
-    model="gemini/gemini-3.5-flash",
+    model="gemini/gemini-1.5-flash",
     api_key=os.environ.get("GEMINI_API_KEY") 
 )
 
