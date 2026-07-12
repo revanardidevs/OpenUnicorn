@@ -357,6 +357,23 @@ async def cmd_kerjakan(interaction: discord.Interaction, tugas: str):
     is_crew_running = True
     await interaction.response.send_message(f"🚀 **Perintah Diterima!**\nAgen segera mengerjakan: *{tugas}*")
     
+    # Broadcast chat event ke 3D UI agar perintah muncul di panel kanan (Chat)
+    chat_event = json.dumps({
+        "type": "event",
+        "event": "chat",
+        "seq": next_seq(),
+        "payload": {
+            "runId": f"run-ceo-{uuid.uuid4().hex[:8]}",
+            "sessionKey": "main-chat",
+            "state": "final",
+            "message": {
+                "role": "user",
+                "content": f"[CEO]: {tugas}"
+            }
+        }
+    })
+    loop.call_soon_threadsafe(event_queue.put_nowait, chat_event)
+    
     # Eksekusi CrewAI di background tanpa memblokir event loop
     asyncio.create_task(asyncio.to_thread(run_crewai, tugas))
 
