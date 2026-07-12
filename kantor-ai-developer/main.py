@@ -217,8 +217,14 @@ async def broadcast_events():
             # dari build_agent_lifecycle_event(), jadi kirim langsung
             websockets.broadcast(CONNECTED_CLIENTS, message)
 
+import http
+
 # Fungsi untuk membypass pengecekan keamanan asal silang (CORS) dari browser
+# dan merespons Health Check HTTP standar dari load balancer Hugging Face Space
 async def process_request(path, request_headers):
+    # Jika request bukan WebSocket Upgrade (contoh: health check dari HF Proxy)
+    if "Upgrade" not in request_headers:
+        return (http.HTTPStatus.OK, [], b"Server is healthy\n")
     return None
 
 # Memulai Server WebSocket
