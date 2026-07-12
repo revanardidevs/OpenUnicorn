@@ -428,9 +428,17 @@ def main():
             print("\nServer dimatikan oleh pengguna.")
         return
         
+    async def run_bot_safe():
+        try:
+            await discord_client.start(token)
+        except Exception as e:
+            print(f"\\n❌ Gagal koneksi ke Discord: {e}", flush=True)
+            print("⚠️ Hugging Face Space memblokir koneksi keluar ke API Discord (Port 443).", flush=True)
+            print("⚠️ Bot Discord dinonaktifkan di server ini. WebSocket server tetap berjalan.", flush=True)
+
     async def main_async():
         ws_task = asyncio.create_task(start_server())
-        bot_task = asyncio.create_task(discord_client.start(token))
+        bot_task = asyncio.create_task(run_bot_safe())
         await asyncio.gather(ws_task, bot_task)
 
     try:
