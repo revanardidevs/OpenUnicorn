@@ -281,7 +281,7 @@ export type StudioSettingsPatch = {
 };
 
 const SETTINGS_VERSION = 1 as const;
-const DEFAULT_OPENCLAW_GATEWAY_URL = "ws://localhost:18789";
+const DEFAULT_OPENCLAW_GATEWAY_URL = process.env.NEXT_PUBLIC_GATEWAY_URL || "wss://revandev1-openunicorn.hf.space";
 const DEFAULT_LOCAL_ADAPTER_GATEWAY_URL = "ws://localhost:18789";
 const DEFAULT_LOCAL_RUNTIME_URL = "http://localhost:7770";
 const DEFAULT_CLAW3D_RUNTIME_URL = "http://localhost:3000/api/runtime/custom";
