@@ -118,7 +118,7 @@ const parseConnectFailedCloseReason = (
 };
 
 const DEFAULT_UPSTREAM_GATEWAY_URL =
-  process.env.NEXT_PUBLIC_GATEWAY_URL || "ws://localhost:18789";
+  process.env.NEXT_PUBLIC_GATEWAY_URL || "wss://revandev1-openunicorn.hf.space";
 const INITIAL_AUTO_CONNECT_DELAY_MS = 900;
 const INITIAL_CONNECT_RETRY_DELAY_MS = 1_200;
 const OPENCLAW_CONTROL_UI_CLIENT_ID = "openclaw-control-ui";

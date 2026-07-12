@@ -3,3 +3,4 @@ crewai-tools==1.15.1
 python-dotenv==1.2.2
 websockets==16.0
 requests==2.34.2
+discord.py==2.4.0
