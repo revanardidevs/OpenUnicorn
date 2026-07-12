@@ -4,8 +4,11 @@ import json
 import asyncio
 import types
 import uuid
-import websockets
+import http
 import time
+import websockets
+from websockets.datastructures import Headers
+from websockets.http11 import Response
 import requests
 from dotenv import load_dotenv
 from crewai import Crew, Process, Task
@@ -13,7 +16,7 @@ import discord
 from discord import app_commands
 
 # Pastikan encoding terminal mendukung karakter khusus dari AI
-if sys.stdout.encoding.lower() != 'utf-8':
+if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
     try:
         sys.stdout.reconfigure(encoding='utf-8')
     except Exception:
@@ -205,7 +208,7 @@ async def websocket_handler(websocket):
     except websockets.exceptions.ConnectionClosed:
         pass
     finally:
-        CONNECTED_CLIENTS.remove(websocket)
+        CONNECTED_CLIENTS.discard(websocket)  # discard() aman jika sudah tidak ada
         print(f"🔗 Klien 3D Frontend terputus. Total klien: {len(CONNECTED_CLIENTS)}", flush=True)
 
 # Broadcaster di background (membaca dari event_queue dan mengirim ke SEMUA klien aktif)
@@ -217,24 +220,54 @@ async def broadcast_events():
             # dari build_agent_lifecycle_event(), jadi kirim langsung
             websockets.broadcast(CONNECTED_CLIENTS, message)
 
-import http
-
-# Fungsi untuk membypass pengecekan keamanan asal silang (CORS) dari browser
-# dan merespons Health Check HTTP standar dari load balancer Hugging Face Space
-async def process_request(path, request_headers):
-    # Jika request bukan WebSocket Upgrade (contoh: health check dari HF Proxy)
-    if "Upgrade" not in request_headers:
-        return (http.HTTPStatus.OK, [], b"Server is healthy\n")
+# Callback process_request untuk websockets v16.0
+# Signature: (connection: ServerConnection, request: Request) -> Response | None
+# Jika return Response => WebSocket handshake DIBATALKAN, HTTP response langsung dikirim
+# Jika return None => WebSocket handshake DILANJUTKAN seperti biasa
+def process_request(connection, request):
+    """Tangani HTTP health check dari Hugging Face load balancer.
+    
+    Hugging Face secara berkala mengirim HTTP GET biasa (bukan WebSocket upgrade)
+    ke port 7860 untuk memeriksa apakah container masih hidup.
+    Jika kita tidak merespons dengan benar, HF akan me-restart container.
+    
+    Untuk request WebSocket yang valid (memiliki header Upgrade), kita return None
+    agar handshake WebSocket dilanjutkan seperti biasa.
+    """
+    # Cek apakah ini request WebSocket upgrade atau HTTP biasa
+    # Request WebSocket pasti memiliki header "Upgrade: websocket"
+    try:
+        upgrade_header = request.headers.get("Upgrade", "")
+    except Exception:
+        upgrade_header = ""
+    
+    if upgrade_header.lower() != "websocket":
+        # Ini adalah HTTP biasa (health check dari HF proxy)
+        # Kirim respons HTTP 200 OK
+        return Response(
+            200, "OK",
+            Headers([("Content-Type", "text/plain")]),
+            b"Server is healthy\n"
+        )
+    
+    # Ini adalah WebSocket upgrade request, lanjutkan handshake
     return None
 
 # Memulai Server WebSocket
 async def start_server():
-    port = int(os.environ.get("PORT", 8000))
-    print(f"🌐 Menjalankan WebSocket Server di ws://0.0.0.0:{port}...")
+    port = int(os.environ.get("PORT", 7860))
+    print(f"🌐 Menjalankan WebSocket Server di ws://0.0.0.0:{port}...", flush=True)
     # Jalankan broadcaster di background
     asyncio.create_task(broadcast_events())
     
-    async with websockets.serve(websocket_handler, "0.0.0.0", port, process_request=process_request):
+    async with websockets.serve(
+        websocket_handler,
+        "0.0.0.0",
+        port,
+        process_request=process_request,
+        # Suppress noisy handshake error logs dari koneksi yang gagal
+        logger=None,
+    ):
         await asyncio.Future()  # Berjalan selamanya (infinite loop)
 
 # Fungsi untuk mengirim notifikasi ke Discord
@@ -261,7 +294,7 @@ def kirim_ke_discord(pesan):
 # Fungsi untuk mengeksekusi CrewAI (Berjalan di Thread terpisah)
 def run_crewai(tugas_custom=None):
     global is_crew_running
-    print("🚀 Memulai eksekusi CrewAI di latar belakang...")
+    print("🚀 Memulai eksekusi CrewAI di latar belakang...", flush=True)
     
     # Buat Task BARU setiap kali dieksekusi agar tidak bermutasi objek global
     if tugas_custom:
