@@ -2,10 +2,12 @@ import os
 from crewai import Agent, LLM
 
 # Konfigurasi LLM menggunakan Gemini (Gratis/Lebih hemat)
-# CrewAI otomatis menggunakan LiteLLM, sehingga format 'gemini/...' bisa digunakan
+# Kita tambahkan retry mechanism jika API Gemini sedang kepenuhan (503 Overloaded)
 gemini_llm = LLM(
     model="gemini/gemini-1.5-flash",
-    api_key=os.environ.get("GEMINI_API_KEY") 
+    api_key=os.environ.get("GEMINI_API_KEY"),
+    max_retries=5,
+    timeout=60
 )
 
 # 1. Product Manager (PM)
